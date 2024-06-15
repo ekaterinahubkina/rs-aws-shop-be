@@ -1,0 +1,29 @@
+---
+swagger: "2.0"
+info:
+  version: "2024-06-15T20:05:25Z"
+  title: "ProductService"
+host: "sv7gf2fug2.execute-api.eu-central-1.amazonaws.com"
+basePath: "/prod"
+schemes:
+- "https"
+paths:
+  /products:
+    get:
+      responses: {}
+  /products/{id}:
+    get:
+      parameters:
+      - name: "id"
+        in: "path"
+        required: true
+        type: "string"
+      responses: {}
+  /{id}:
+    get:
+      parameters:
+      - name: "id"
+        in: "path"
+        required: true
+        type: "string"
+      responses: {}
