@@ -36,7 +36,7 @@ export class ProductsServiceStack extends cdk.Stack {
 
     productsPath.addMethod("GET", new LambdaIntegration(getProductsList));
 
-    const productByIdPath = api.root.addResource("{id}");
+    const productByIdPath = productsPath.addResource("{id}");
 
     productByIdPath.addMethod("GET", new LambdaIntegration(getProductById));
   }
