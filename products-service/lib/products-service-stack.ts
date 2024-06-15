@@ -12,24 +12,32 @@ import {
 } from "aws-cdk-lib/aws-apigateway";
 import * as path from "path";
 
-export class ProductsServiceStack extends cdk.Stack {
+export class ProductsServiceStackKate extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const getProductsList = new LambdaFunction(this, "GetProductsListHandler", {
-      runtime: Runtime.NODEJS_20_X,
-      code: Code.fromAsset(path.join(__dirname + "/../lambda-functions")),
-      handler: "getProductsList.handler",
-    });
+    const getProductsList = new LambdaFunction(
+      this,
+      "GetProductsListHandlerKate",
+      {
+        runtime: Runtime.NODEJS_20_X,
+        code: Code.fromAsset(path.join(__dirname + "/../lambda-functions")),
+        handler: "getProductsList.handler",
+      }
+    );
 
-    const getProductById = new LambdaFunction(this, "GetProductByIdHandler", {
-      runtime: Runtime.NODEJS_20_X,
-      code: Code.fromAsset(path.join(__dirname + "/../lambda-functions")),
-      handler: "getProductById.handler",
-    });
+    const getProductById = new LambdaFunction(
+      this,
+      "GetProductByIdHandlerKate",
+      {
+        runtime: Runtime.NODEJS_20_X,
+        code: Code.fromAsset(path.join(__dirname + "/../lambda-functions")),
+        handler: "getProductById.handler",
+      }
+    );
 
-    const api = new RestApi(this, "ProductService", {
-      restApiName: "ProductService",
+    const api = new RestApi(this, "ProductServiceKate", {
+      restApiName: "ProductServiceKate",
     });
 
     const productsPath = api.root.addResource("products");
