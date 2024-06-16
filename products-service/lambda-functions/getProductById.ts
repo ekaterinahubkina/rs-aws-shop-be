@@ -1,7 +1,7 @@
 import { APIGatewayEvent } from "aws-lambda";
 import { products } from "./products";
 
-export async function handler(event: APIGatewayEvent) {
+export async function handler(event: Partial<APIGatewayEvent>) {
   const productById = products.find(
     (product) => product.id === event.pathParameters?.id
   );
