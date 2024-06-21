@@ -4,25 +4,50 @@ import {
   Function as LambdaFunction,
   Runtime,
   Code,
+  FunctionProps,
 } from "aws-cdk-lib/aws-lambda";
 import {
   LambdaIntegration,
   LambdaRestApi,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
+import { Table } from "aws-cdk-lib/aws-dynamodb";
 import * as path from "path";
 
 export class ProductsServiceStackKate extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    const productsTableName = "products_kate";
+    const stocksTableName = "stocks_kate";
+
+    const productsTable = Table.fromTableName(
+      this,
+      "ProductsTableKate",
+      productsTableName
+    );
+
+    const stocksTable = Table.fromTableName(
+      this,
+      "StocksTableKate",
+      stocksTableName
+    );
+
+    const lambdaFunctionProps: Omit<FunctionProps, "handler"> = {
+      runtime: Runtime.NODEJS_20_X,
+      code: Code.fromAsset(path.join(__dirname + "/../lambda-functions")),
+      environment: {
+        PRODUCTS_TABLE: productsTable.tableName,
+        STOCKS_TABLE: stocksTable.tableName,
+      },
+    };
+
     const getProductsList = new LambdaFunction(
       this,
       "GetProductsListHandlerKate",
       {
-        runtime: Runtime.NODEJS_20_X,
-        code: Code.fromAsset(path.join(__dirname + "/../lambda-functions")),
         handler: "getProductsList.handler",
+        ...lambdaFunctionProps,
       }
     );
 
@@ -30,11 +55,23 @@ export class ProductsServiceStackKate extends cdk.Stack {
       this,
       "GetProductByIdHandlerKate",
       {
-        runtime: Runtime.NODEJS_20_X,
-        code: Code.fromAsset(path.join(__dirname + "/../lambda-functions")),
         handler: "getProductById.handler",
+        ...lambdaFunctionProps,
       }
     );
+
+    const createProduct = new LambdaFunction(this, "CreateProductHandlerKate", {
+      handler: "createProduct.handler",
+      ...lambdaFunctionProps,
+    });
+
+    // Grant the Lambda function read access to the DynamoDB table
+    productsTable.grantReadWriteData(getProductsList);
+    productsTable.grantReadWriteData(getProductById);
+    productsTable.grantReadWriteData(createProduct);
+    stocksTable.grantReadWriteData(getProductsList);
+    stocksTable.grantReadWriteData(getProductById);
+    stocksTable.grantReadWriteData(createProduct);
 
     const api = new RestApi(this, "ProductServiceKate", {
       restApiName: "ProductServiceKate",
@@ -43,6 +80,7 @@ export class ProductsServiceStackKate extends cdk.Stack {
     const productsPath = api.root.addResource("products");
 
     productsPath.addMethod("GET", new LambdaIntegration(getProductsList));
+    productsPath.addMethod("POST", new LambdaIntegration(createProduct));
 
     const productByIdPath = productsPath.addResource("{id}");
 
