@@ -8,8 +8,10 @@ import {
 } from "aws-cdk-lib/aws-lambda";
 import {
   LambdaIntegration,
-  LambdaRestApi,
   RestApi,
+  Model,
+  JsonSchemaType,
+  RequestValidator,
 } from "aws-cdk-lib/aws-apigateway";
 import { Table } from "aws-cdk-lib/aws-dynamodb";
 import * as path from "path";
@@ -82,8 +84,38 @@ export class ProductsServiceStackKate extends cdk.Stack {
 
     const productsPath = api.root.addResource("products");
 
+    const productModel = new Model(this, "CreateProductValidationModelKate", {
+      restApi: api,
+      contentType: "application/json",
+      description: "To validate the request body",
+      modelName: "CreateProductValidationModelKate",
+      schema: {
+        type: JsonSchemaType.OBJECT,
+        required: ["title", "description", "price", "count"],
+        properties: {
+          title: { type: JsonSchemaType.STRING },
+          description: { type: JsonSchemaType.STRING },
+          price: { type: JsonSchemaType.INTEGER },
+          count: { type: JsonSchemaType.INTEGER },
+        },
+      },
+    });
+
     productsPath.addMethod("GET", new LambdaIntegration(getProductsList));
-    productsPath.addMethod("PUT", new LambdaIntegration(createProduct));
+    productsPath.addMethod("POST", new LambdaIntegration(createProduct), {
+      requestValidator: new RequestValidator(
+        this,
+        "CreateProductBodyValidatorKate",
+        {
+          restApi: api,
+          requestValidatorName: "CreateProductBodyValidatorKate",
+          validateRequestBody: true,
+        }
+      ),
+      requestModels: {
+        "application/json": productModel,
+      },
+    });
 
     const productByIdPath = productsPath.addResource("{id}");
 
