@@ -13,24 +13,27 @@ import {
 } from "aws-cdk-lib/aws-apigateway";
 import { Table } from "aws-cdk-lib/aws-dynamodb";
 import * as path from "path";
+import { config } from "dotenv";
+
+config();
 
 export class ProductsServiceStackKate extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const productsTableName = "products_kate";
-    const stocksTableName = "stocks_kate";
+    const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE ?? "";
+    const STOCKS_TABLE = process.env.STOCKS_TABLE ?? "";
 
     const productsTable = Table.fromTableName(
       this,
       "ProductsTableKate",
-      productsTableName
+      PRODUCTS_TABLE
     );
 
     const stocksTable = Table.fromTableName(
       this,
       "StocksTableKate",
-      stocksTableName
+      STOCKS_TABLE
     );
 
     const lambdaFunctionProps: Omit<FunctionProps, "handler"> = {
@@ -80,7 +83,7 @@ export class ProductsServiceStackKate extends cdk.Stack {
     const productsPath = api.root.addResource("products");
 
     productsPath.addMethod("GET", new LambdaIntegration(getProductsList));
-    productsPath.addMethod("POST", new LambdaIntegration(createProduct));
+    productsPath.addMethod("PUT", new LambdaIntegration(createProduct));
 
     const productByIdPath = productsPath.addResource("{id}");
 

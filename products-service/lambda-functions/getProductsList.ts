@@ -9,6 +9,8 @@ const STOCKS_TABLE = process.env.STOCKS_TABLE || "";
 const db = DynamoDBDocument.from(new DynamoDB());
 
 export async function handler(event: Partial<APIGatewayEvent>) {
+  console.log("Get all products handler incoming request", event);
+
   try {
     const { Items: products } = await db.scan({ TableName: PRODUCTS_TABLE });
     const { Items: stocks } = await db.scan({ TableName: STOCKS_TABLE });

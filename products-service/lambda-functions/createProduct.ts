@@ -5,27 +5,35 @@ import {
   TransactWriteItemsCommandInput,
 } from "@aws-sdk/client-dynamodb";
 import { marshall } from "@aws-sdk/util-dynamodb";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 import { Product } from "./product.interface";
 import { Stock } from "./stock.interface";
+import { APIGatewayEvent } from "aws-lambda";
 
 const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE || "";
 const STOCKS_TABLE = process.env.STOCKS_TABLE || "";
 
 const db = DynamoDBDocument.from(new DynamoDB());
 
-export const handler = async (event: any = {}): Promise<any> => {
+export const handler = async (event: Partial<APIGatewayEvent>) => {
+  console.log("Create product handler incoming request", event);
+
   if (!event.body) {
     return {
       statusCode: 400,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET",
+      },
       body: "invalid request, you are missing the parameter body",
     };
   }
   const { title, description, price, count } =
-    typeof event.body === "object" ? event.body : JSON.parse(event.body);
+    typeof event.body == "object" ? event.body : JSON.parse(event.body);
 
   const newProduct: Product = {
-    id: uuidv4(),
+    id: randomUUID(),
     title,
     description,
     price,

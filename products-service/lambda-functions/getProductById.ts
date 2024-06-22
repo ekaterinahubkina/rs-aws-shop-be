@@ -8,6 +8,8 @@ const STOCKS_TABLE = process.env.STOCKS_TABLE || "";
 const db = DynamoDBDocument.from(new DynamoDB());
 
 export async function handler(event: Partial<APIGatewayEvent>) {
+  console.log("Get product by id handler incoming request", event);
+
   const productId = event.pathParameters?.id;
   if (!productId) {
     return {
