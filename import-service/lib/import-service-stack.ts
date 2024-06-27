@@ -8,7 +8,10 @@ import {
 } from "aws-cdk-lib/aws-lambda";
 import { Bucket } from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
-import path = require("path");
+import * as path from "path";
+import { config } from "dotenv";
+
+config();
 
 export class ImportServiceStackKate extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {

@@ -1,7 +1,7 @@
 import { APIGatewayEvent, S3Event } from "aws-lambda";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { createResponse } from "../utils/create-response";
+import { createResponse } from "./utils/create-response";
 
 const BUCKET_NAME = process.env.BUCKET_NAME || "";
 
