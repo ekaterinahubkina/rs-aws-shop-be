@@ -6,10 +6,7 @@ import { createResponse } from "./utils/create-response";
 const BUCKET_NAME = process.env.BUCKET_NAME || "";
 
 export async function handler(event: APIGatewayEvent) {
-  console.log(
-    "Import products file handler incoming request",
-    event.queryStringParameters?.name
-  );
+  console.log("Import products file handler incoming request", event);
 
   const name = event.queryStringParameters?.name;
 
@@ -21,7 +18,10 @@ export async function handler(event: APIGatewayEvent) {
   }
 
   const client = new S3Client();
-  const command = new PutObjectCommand({ Bucket: BUCKET_NAME, Key: name });
+  const command = new PutObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: `uploaded/${name}`,
+  });
 
   try {
     const presignedUrl = await getSignedUrl(client, command, {
