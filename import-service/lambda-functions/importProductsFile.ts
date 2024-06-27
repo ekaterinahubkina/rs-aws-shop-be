@@ -5,6 +5,8 @@ import { createResponse } from "./utils/create-response";
 
 const BUCKET_NAME = process.env.BUCKET_NAME || "";
 
+const client = new S3Client();
+
 export async function handler(event: APIGatewayEvent) {
   console.log("Import products file handler incoming request", event);
 
@@ -17,7 +19,6 @@ export async function handler(event: APIGatewayEvent) {
     });
   }
 
-  const client = new S3Client();
   const command = new PutObjectCommand({
     Bucket: BUCKET_NAME,
     Key: `uploaded/${name}`,

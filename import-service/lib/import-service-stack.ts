@@ -6,10 +6,12 @@ import {
   Code,
   FunctionProps,
 } from "aws-cdk-lib/aws-lambda";
-import { Bucket } from "aws-cdk-lib/aws-s3";
+import { Bucket, EventType } from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
 import * as path from "path";
 import { config } from "dotenv";
+import { S3EventSource } from "aws-cdk-lib/aws-lambda-event-sources";
+import { LambdaDestination } from "aws-cdk-lib/aws-s3-notifications";
 
 config();
 
@@ -40,7 +42,23 @@ export class ImportServiceStackKate extends cdk.Stack {
       }
     );
 
+    const importFileParser = new LambdaFunction(
+      this,
+      "ImportFileParserHandlerKate",
+      {
+        handler: "importFileParser.handler",
+        ...lambdaFunctionProps,
+      }
+    );
+
     importServiceBucket.grantReadWrite(importProductsFile);
+    importServiceBucket.grantReadWrite(importFileParser);
+
+    importServiceBucket.addEventNotification(
+      EventType.OBJECT_CREATED,
+      new LambdaDestination(importFileParser),
+      { prefix: "uploaded/*" }
+    );
 
     const api = new RestApi(this, "ImportServiceKate", {
       restApiName: "ImportServiceKate",
