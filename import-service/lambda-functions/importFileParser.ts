@@ -18,8 +18,6 @@ export async function handler(event: S3Event) {
   const bucketName = event.Records[0].s3.bucket.name;
   const fileName = event.Records[0].s3.object.key;
 
-  console.log("fileName", fileName);
-
   try {
     const getCommand = new GetObjectCommand({
       Bucket: bucketName,
@@ -28,20 +26,18 @@ export async function handler(event: S3Event) {
 
     const parsedKey = fileName.replace("uploaded/", "parsed/");
 
-    // const copyCommand = new CopyObjectCommand({
-    //   Bucket: bucketName, // the new bucket (if supplied)
-    //   CopySource: fileName, // the location of the file to be copied
-    //   Key: parsedKey, // the new location
-    // });
+    const copyCommand = new CopyObjectCommand({
+      Bucket: bucketName,
+      CopySource: `${bucketName}/${fileName}`,
+      Key: parsedKey,
+    });
 
-    // const deleteCommand = new DeleteObjectCommand({
-    //   Bucket: bucketName,
-    //   Key: fileName,
-    // });
+    const deleteCommand = new DeleteObjectCommand({
+      Bucket: bucketName,
+      Key: fileName,
+    });
 
     const res = await client.send(getCommand);
-
-    console.log("RES", res);
 
     const parsed: { [key: string]: string }[] = [];
 
@@ -54,14 +50,14 @@ export async function handler(event: S3Event) {
     } else {
       throw new Error("Not a readable stream");
     }
+    //copy to "parsed/"
+    await client.send(copyCommand);
+    //delete from "uploaded"
+    await client.send(deleteCommand);
 
-    // const copyRes = await client.send(copyCommand);
-
-    // console.log("copy result", copyRes);
-
-    // const deleteRes = await client.send(deleteCommand);
-
-    // console.log("delete result", deleteRes);
+    console.log(
+      'Succesfully parsed the csv and moved the file from "uploaded" to "parsed" folder'
+    );
   } catch (error) {
     console.error("Error", error);
   }
