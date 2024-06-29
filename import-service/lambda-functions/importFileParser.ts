@@ -6,7 +6,7 @@ import {
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import * as csv from "csv-parser";
-import * as fs from "fs";
+import * as stream from "stream";
 
 const BUCKET_NAME = process.env.BUCKET_NAME || "";
 
@@ -20,46 +20,49 @@ export async function handler(event: S3Event) {
 
   console.log("fileName", fileName);
 
-  const getCommand = new GetObjectCommand({
-    Bucket: bucketName,
-    Key: fileName,
-  });
-
-  const copyCommand = new CopyObjectCommand({
-    Bucket: bucketName, // the new bucket (if supplied)
-    CopySource: `uploaded/${fileName}`, // the location of the file to be copied
-    Key: `parsed/${fileName}`, // the new location
-  });
-
-  const deleteCommand = new DeleteObjectCommand({
-    Bucket: bucketName,
-    Key: `uploaded/${fileName}`,
-  });
-
   try {
+    const getCommand = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: fileName,
+    });
+
+    const parsedKey = fileName.replace("uploaded/", "parsed/");
+
+    // const copyCommand = new CopyObjectCommand({
+    //   Bucket: bucketName, // the new bucket (if supplied)
+    //   CopySource: fileName, // the location of the file to be copied
+    //   Key: parsedKey, // the new location
+    // });
+
+    // const deleteCommand = new DeleteObjectCommand({
+    //   Bucket: bucketName,
+    //   Key: fileName,
+    // });
+
     const res = await client.send(getCommand);
-    // The Body object also has 'transformToByteArray' and 'transformToWebStream' methods.
-    const str = await res.Body?.transformToString();
-    console.log(str);
+
+    console.log("RES", res);
 
     const parsed: { [key: string]: string }[] = [];
 
-    fs.createReadStream(fileName)
-      .pipe(csv())
-      .on("data", (data) => parsed.push(data))
-      .on("end", () => {
-        console.log("parsed", parsed);
-      });
+    if (res.Body instanceof stream.Readable) {
+      res.Body.pipe(csv())
+        .on("data", (data: { [key: string]: string }) => parsed.push(data))
+        .on("end", () => {
+          console.log("Parsed CSV:", parsed);
+        });
+    } else {
+      throw new Error("Not a readable stream");
+    }
 
-    const copyRes = await client.send(copyCommand);
+    // const copyRes = await client.send(copyCommand);
 
-    console.log("copy result", copyRes);
+    // console.log("copy result", copyRes);
 
-    const deleteRes = await client.send(deleteCommand);
+    // const deleteRes = await client.send(deleteCommand);
 
-    console.log("delete result", deleteRes);
+    // console.log("delete result", deleteRes);
   } catch (error) {
     console.error("Error", error);
-    throw new Error((error as Error).message ?? "An error occured");
   }
 }

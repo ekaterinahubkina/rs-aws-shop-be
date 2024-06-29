@@ -53,11 +53,12 @@ export class ImportServiceStackKate extends cdk.Stack {
 
     importServiceBucket.grantReadWrite(importProductsFile);
     importServiceBucket.grantReadWrite(importFileParser);
+    importServiceBucket.grantDelete(importFileParser);
 
     importServiceBucket.addEventNotification(
       EventType.OBJECT_CREATED,
       new LambdaDestination(importFileParser),
-      { prefix: "uploaded/*" }
+      { prefix: "uploaded/" }
     );
 
     const api = new RestApi(this, "ImportServiceKate", {
