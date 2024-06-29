@@ -8,8 +8,6 @@ import {
 import * as csv from "csv-parser";
 import * as stream from "stream";
 
-const BUCKET_NAME = process.env.BUCKET_NAME || "";
-
 const client = new S3Client();
 
 export async function handler(event: S3Event) {
