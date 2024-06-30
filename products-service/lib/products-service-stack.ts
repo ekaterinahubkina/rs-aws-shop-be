@@ -12,6 +12,7 @@ import {
   Model,
   JsonSchemaType,
   RequestValidator,
+  Cors,
 } from "aws-cdk-lib/aws-apigateway";
 import { Table } from "aws-cdk-lib/aws-dynamodb";
 import * as path from "path";
@@ -80,6 +81,10 @@ export class ProductsServiceStackKate extends cdk.Stack {
 
     const api = new RestApi(this, "ProductServiceKate", {
       restApiName: "ProductServiceKate",
+      defaultCorsPreflightOptions: {
+        allowOrigins: Cors.ALL_ORIGINS,
+        allowMethods: Cors.ALL_METHODS,
+      },
     });
 
     const productsPath = api.root.addResource("products");
