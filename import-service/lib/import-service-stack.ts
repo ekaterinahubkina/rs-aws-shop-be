@@ -12,6 +12,7 @@ import * as path from "path";
 import { config } from "dotenv";
 import { S3EventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { LambdaDestination } from "aws-cdk-lib/aws-s3-notifications";
+import { Queue } from "aws-cdk-lib/aws-sqs";
 
 config();
 
@@ -26,6 +27,8 @@ export class ImportServiceStackKate extends cdk.Stack {
       "importServiceBucketKate",
       BUCKET_NAME
     );
+
+    // const catalogItemsQueue = Queue.fromQueueAttributes
 
     const lambdaFunctionProps: Omit<FunctionProps, "handler"> = {
       runtime: Runtime.NODEJS_20_X,

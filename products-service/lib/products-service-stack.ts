@@ -17,6 +17,8 @@ import {
 import { Table } from "aws-cdk-lib/aws-dynamodb";
 import * as path from "path";
 import { config } from "dotenv";
+import { Queue } from "aws-cdk-lib/aws-sqs";
+import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 
 config();
 
@@ -71,13 +73,39 @@ export class ProductsServiceStackKate extends cdk.Stack {
       ...lambdaFunctionProps,
     });
 
+    const catalogBatchProcess = new LambdaFunction(
+      this,
+      "CatalogBatchProcessHandlerKate",
+      {
+        handler: "catalogBatchProcess.handler",
+        ...lambdaFunctionProps,
+      }
+    );
+
+    const deadLetterQueue = new Queue(this, "DeadLetterQueueKate");
+
+    const catalogItemsQueue = new Queue(this, "CatalogItemsQueueKate", {
+      queueName: "catalogItemsQueueKate",
+      deadLetterQueue: { queue: deadLetterQueue, maxReceiveCount: 1 },
+    });
+
+    catalogItemsQueue.grantConsumeMessages(catalogBatchProcess);
+
+    catalogBatchProcess.addEventSource(
+      new SqsEventSource(catalogItemsQueue, {
+        batchSize: 5,
+      })
+    );
+
     // Grant the Lambda function read access to the DynamoDB table
     productsTable.grantReadWriteData(getProductsList);
     productsTable.grantReadWriteData(getProductById);
     productsTable.grantReadWriteData(createProduct);
+    productsTable.grantReadWriteData(catalogBatchProcess);
     stocksTable.grantReadWriteData(getProductsList);
     stocksTable.grantReadWriteData(getProductById);
     stocksTable.grantReadWriteData(createProduct);
+    stocksTable.grantReadWriteData(catalogBatchProcess);
 
     const api = new RestApi(this, "ProductServiceKate", {
       restApiName: "ProductServiceKate",

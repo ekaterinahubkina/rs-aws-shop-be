@@ -9,6 +9,7 @@ import { randomUUID } from "crypto";
 import { Product } from "./product.interface";
 import { Stock } from "./stock.interface";
 import { APIGatewayEvent } from "aws-lambda";
+import { createResponse } from "./utils/create-response";
 
 const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE || "";
 const STOCKS_TABLE = process.env.STOCKS_TABLE || "";
@@ -19,15 +20,10 @@ export const handler = async (event: Partial<APIGatewayEvent>) => {
   console.log("Create product handler incoming request", event);
 
   if (!event.body) {
-    return {
+    return createResponse({
       statusCode: 400,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET",
-      },
-      body: "invalid request, you are missing the parameter body",
-    };
+      body: { message: "Event body is missing" },
+    });
   }
   const { title, description, price, count } =
     typeof event.body == "object" ? event.body : JSON.parse(event.body);
@@ -64,24 +60,15 @@ export const handler = async (event: Partial<APIGatewayEvent>) => {
   try {
     const command = new TransactWriteItemsCommand(input);
     await db.send(command);
-    return {
+
+    return createResponse({
       statusCode: 201,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET",
-      },
-      body: "",
-    };
+      body: { message: "Product successfully created" },
+    });
   } catch (error) {
-    return {
+    return createResponse({
       statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET",
-      },
       body: error,
-    };
+    });
   }
 };
