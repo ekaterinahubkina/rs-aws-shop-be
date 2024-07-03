@@ -11,11 +11,14 @@ import { Product } from "./product.interface";
 import { Stock } from "./stock.interface";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { createResponse } from "./utils/create-response";
+import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 
 const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE || "";
 const STOCKS_TABLE = process.env.STOCKS_TABLE || "";
+const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN || "";
 
 const db = DynamoDBDocument.from(new DynamoDB());
+export const snsClient = new SNSClient({});
 
 export async function handler(event: SQSEvent) {
   console.log("Catalog Batch Process handler incoming request", event);
@@ -73,6 +76,18 @@ export async function handler(event: SQSEvent) {
 
     const res = await db.send(command);
     console.log("DB trx res", res);
+
+    const response = await snsClient.send(
+      new PublishCommand({
+        Subject: "Products created",
+        TopicArn: SNS_TOPIC_ARN,
+        Message: JSON.stringify({
+          message: "Products from the csv successfully added to the DB",
+          count: transactItems.length / 2,
+        }),
+      })
+    );
+    console.log(response);
 
     return createResponse({
       statusCode: 201,

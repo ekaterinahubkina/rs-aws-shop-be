@@ -19,6 +19,8 @@ import * as path from "path";
 import { config } from "dotenv";
 import { Queue } from "aws-cdk-lib/aws-sqs";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
+import { FilterOrPolicy, SubscriptionFilter, Topic } from "aws-cdk-lib/aws-sns";
+import { EmailSubscription } from "aws-cdk-lib/aws-sns-subscriptions";
 
 config();
 
@@ -28,6 +30,8 @@ export class ProductsServiceStackKate extends cdk.Stack {
 
     const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE ?? "";
     const STOCKS_TABLE = process.env.STOCKS_TABLE ?? "";
+    const EMAIL_ONE = process.env.EMAIL_ONE ?? "";
+    const EMAIL_TWO = process.env.EMAIL_TWO ?? "";
 
     const productsTable = Table.fromTableName(
       this,
@@ -41,12 +45,37 @@ export class ProductsServiceStackKate extends cdk.Stack {
       STOCKS_TABLE
     );
 
+    const createProductTopic = new Topic(this, "createProductTopicKate", {
+      topicName: "createProductTopicKate",
+    });
+
+    createProductTopic.addSubscription(
+      new EmailSubscription(EMAIL_ONE, {
+        filterPolicyWithMessageBody: {
+          count: FilterOrPolicy.filter(
+            SubscriptionFilter.numericFilter({ greaterThanOrEqualTo: 5 })
+          ),
+        },
+      })
+    );
+
+    createProductTopic.addSubscription(
+      new EmailSubscription(EMAIL_TWO, {
+        filterPolicyWithMessageBody: {
+          count: FilterOrPolicy.filter(
+            SubscriptionFilter.numericFilter({ lessThan: 5 })
+          ),
+        },
+      })
+    );
+
     const lambdaFunctionProps: Omit<FunctionProps, "handler"> = {
       runtime: Runtime.NODEJS_20_X,
       code: Code.fromAsset(path.join(__dirname + "/../lambda-functions")),
       environment: {
         PRODUCTS_TABLE: productsTable.tableName,
         STOCKS_TABLE: stocksTable.tableName,
+        SNS_TOPIC_ARN: createProductTopic.topicArn,
       },
     };
 
@@ -106,6 +135,8 @@ export class ProductsServiceStackKate extends cdk.Stack {
     stocksTable.grantReadWriteData(getProductById);
     stocksTable.grantReadWriteData(createProduct);
     stocksTable.grantReadWriteData(catalogBatchProcess);
+
+    createProductTopic.grantPublish(catalogBatchProcess);
 
     const api = new RestApi(this, "ProductServiceKate", {
       restApiName: "ProductServiceKate",
