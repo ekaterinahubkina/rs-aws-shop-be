@@ -21,6 +21,8 @@ export class ImportServiceStackKate extends cdk.Stack {
     super(scope, id, props);
 
     const BUCKET_NAME = process.env.BUCKET_NAME ?? "";
+    const SQS_ARN = process.env.SQS_ARN ?? "";
+    const SQS_URL = process.env.SQS_URL ?? "";
 
     const importServiceBucket = Bucket.fromBucketName(
       this,
@@ -28,12 +30,10 @@ export class ImportServiceStackKate extends cdk.Stack {
       BUCKET_NAME
     );
 
-    // const catalogItemsQueue = Queue.fromQueueAttributes
-
     const lambdaFunctionProps: Omit<FunctionProps, "handler"> = {
       runtime: Runtime.NODEJS_20_X,
       code: Code.fromAsset(path.join(__dirname + "/../lambda-functions")),
-      environment: { BUCKET_NAME },
+      environment: { BUCKET_NAME, SQS_URL },
     };
 
     const importProductsFile = new LambdaFunction(
@@ -53,6 +53,14 @@ export class ImportServiceStackKate extends cdk.Stack {
         ...lambdaFunctionProps,
       }
     );
+
+    const catalogItemsQueue = Queue.fromQueueArn(
+      this,
+      "CatalogItemsQueueKate",
+      SQS_ARN
+    );
+
+    catalogItemsQueue.grantSendMessages(importFileParser);
 
     importServiceBucket.grantReadWrite(importProductsFile);
     importServiceBucket.grantReadWrite(importFileParser);
