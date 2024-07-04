@@ -53,7 +53,7 @@ export class ProductsServiceStackKate extends cdk.Stack {
       new EmailSubscription(EMAIL_ONE, {
         filterPolicyWithMessageBody: {
           count: FilterOrPolicy.filter(
-            SubscriptionFilter.numericFilter({ greaterThanOrEqualTo: 5 })
+            SubscriptionFilter.numericFilter({ greaterThanOrEqualTo: 3 })
           ),
         },
       })
@@ -63,7 +63,7 @@ export class ProductsServiceStackKate extends cdk.Stack {
       new EmailSubscription(EMAIL_TWO, {
         filterPolicyWithMessageBody: {
           count: FilterOrPolicy.filter(
-            SubscriptionFilter.numericFilter({ lessThan: 5 })
+            SubscriptionFilter.numericFilter({ lessThan: 3 })
           ),
         },
       })

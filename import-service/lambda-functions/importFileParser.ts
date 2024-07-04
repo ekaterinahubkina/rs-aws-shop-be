@@ -50,8 +50,7 @@ export async function handler(event: S3Event) {
             QueueUrl: SQS_URL,
             MessageBody: JSON.stringify(data),
           });
-          const response = await sqsClient.send(command);
-          console.log("response", response);
+          await sqsClient.send(command);
         })
         .on("end", () => {});
     } else {
@@ -63,7 +62,7 @@ export async function handler(event: S3Event) {
     await client.send(deleteCommand);
 
     console.log(
-      'Succesfully parsed the csv and moved the file from "uploaded" to "parsed" folder'
+      'Succesfully parsed the csv, sent each product to SQS and moved the file from "uploaded" to "parsed" folder'
     );
   } catch (error) {
     console.error("Error", error);

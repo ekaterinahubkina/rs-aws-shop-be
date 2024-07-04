@@ -21,18 +21,15 @@ const db = DynamoDBDocument.from(new DynamoDB());
 export const snsClient = new SNSClient({});
 
 export async function handler(event: SQSEvent) {
-  console.log("Catalog Batch Process handler incoming request", event);
-
+  console.log("Incoming SQS event", event);
+  const transactItems: TransactWriteItem[] = [];
+  const productsForSns: Product[] = [];
   try {
-    const transactItems: TransactWriteItem[] = [];
     for (const message of event.Records) {
-      console.log("message", message);
       const { title, description, price, count } =
         typeof message.body == "object"
           ? message.body
           : JSON.parse(message.body);
-
-      console.log(title, description, price, count);
 
       if (!title || !description || !price || !count) {
         return createResponse({
@@ -52,6 +49,9 @@ export async function handler(event: SQSEvent) {
         product_id: newProduct.id,
         count,
       };
+
+      const productForSns = { ...newProduct, count: newStock.count };
+      productsForSns.push(productForSns);
 
       const putProduct = {
         Put: {
@@ -74,20 +74,19 @@ export async function handler(event: SQSEvent) {
       TransactItems: transactItems,
     });
 
-    const res = await db.send(command);
-    console.log("DB trx res", res);
+    await db.send(command);
 
-    const response = await snsClient.send(
+    await snsClient.send(
       new PublishCommand({
         Subject: "Products created",
         TopicArn: SNS_TOPIC_ARN,
         Message: JSON.stringify({
           message: "Products from the csv successfully added to the DB",
-          count: transactItems.length / 2,
+          products: productsForSns,
+          count: productsForSns.length,
         }),
       })
     );
-    console.log(response);
 
     return createResponse({
       statusCode: 201,
