@@ -18,7 +18,7 @@ const STOCKS_TABLE = process.env.STOCKS_TABLE || "";
 const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN || "";
 
 const db = DynamoDBDocument.from(new DynamoDB());
-export const snsClient = new SNSClient({});
+const snsClient = new SNSClient({});
 
 export async function handler(event: SQSEvent) {
   console.log("Incoming SQS event", event);
