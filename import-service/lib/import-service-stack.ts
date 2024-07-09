@@ -10,7 +10,6 @@ import { Bucket, EventType } from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
 import * as path from "path";
 import { config } from "dotenv";
-import { S3EventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { LambdaDestination } from "aws-cdk-lib/aws-s3-notifications";
 import { Queue } from "aws-cdk-lib/aws-sqs";
 
