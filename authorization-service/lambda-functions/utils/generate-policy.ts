@@ -6,11 +6,9 @@ export enum PolicyEffect {
 }
 
 export const generatePolicy = ({
-  creds,
   resource,
   effect,
 }: {
-  creds: string;
   resource: string;
   effect: PolicyEffect;
 }): PolicyDocument => {

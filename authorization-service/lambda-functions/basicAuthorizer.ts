@@ -1,5 +1,8 @@
 import { createResponse } from "./utils/create-response";
-import { APIGatewayRequestAuthorizerEvent } from "aws-lambda";
+import {
+  APIGatewayAuthorizerResult,
+  APIGatewayRequestAuthorizerEvent,
+} from "aws-lambda";
 import { PolicyEffect, generatePolicy } from "./utils/generate-policy";
 
 export async function handler(event: APIGatewayRequestAuthorizerEvent) {
@@ -28,12 +31,16 @@ export async function handler(event: APIGatewayRequestAuthorizerEvent) {
         : PolicyEffect.ALLOW;
 
     const policy = generatePolicy({
-      creds: authToken,
       resource: event.methodArn,
       effect,
     });
 
-    return policy;
+    const response: APIGatewayAuthorizerResult = {
+      principalId: authToken,
+      policyDocument: policy,
+    };
+
+    return response;
   } catch (error) {
     return createResponse({
       statusCode: 401,
