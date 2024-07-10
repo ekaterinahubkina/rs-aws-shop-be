@@ -8,7 +8,8 @@ import { PolicyEffect, generatePolicy } from "./utils/generate-policy";
 export async function handler(event: APIGatewayRequestAuthorizerEvent) {
   console.log("Basic authorizer handler incoming event", event);
 
-  const authToken = event.headers?.["Authorization"] || "";
+  const auth = event.headers?.["Authorization"] || "";
+  const [, authToken] = auth.split(" ");
 
   if (!authToken || event.type !== "REQUEST") {
     return createResponse({

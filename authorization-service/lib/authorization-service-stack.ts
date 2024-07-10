@@ -15,12 +15,12 @@ export class AuthorizationServiceStackKate extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const AUTH_CREDS = process.env.ekaterinahubkina ?? "";
+    const ekaterinahubkina = process.env.ekaterinahubkina ?? "";
 
     const lambdaFunctionProps: Omit<FunctionProps, "handler"> = {
       runtime: Runtime.NODEJS_20_X,
       code: Code.fromAsset(path.join(__dirname + "/../lambda-functions")),
-      environment: { AUTH_CREDS },
+      environment: { ekaterinahubkina },
     };
 
     const basicAuthorizer = new LambdaFunction(

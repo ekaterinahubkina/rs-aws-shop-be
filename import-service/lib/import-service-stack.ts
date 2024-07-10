@@ -1,5 +1,12 @@
 import * as cdk from "aws-cdk-lib";
-import { Cors, LambdaIntegration, RestApi } from "aws-cdk-lib/aws-apigateway";
+import {
+  AuthorizationType,
+  Cors,
+  IdentitySource,
+  LambdaIntegration,
+  RequestAuthorizer,
+  RestApi,
+} from "aws-cdk-lib/aws-apigateway";
 import {
   Function as LambdaFunction,
   Runtime,
@@ -21,6 +28,8 @@ export class ImportServiceStackKate extends cdk.Stack {
 
     const BUCKET_NAME = process.env.BUCKET_NAME ?? "";
     const SQS_ARN = process.env.SQS_ARN ?? "";
+    const BASIC_AUTHORIZER_LAMBDA_ARN =
+      process.env.BASIC_AUTHORIZER_LAMBDA_ARN ?? "";
 
     const importServiceBucket = Bucket.fromBucketName(
       this,
@@ -58,6 +67,12 @@ export class ImportServiceStackKate extends cdk.Stack {
       }
     );
 
+    const basicAuthorizer = LambdaFunction.fromFunctionAttributes(
+      this,
+      "BasicAuthorizerHandlerKate",
+      { functionArn: BASIC_AUTHORIZER_LAMBDA_ARN, sameEnvironment: true }
+    );
+
     catalogItemsQueue.grantSendMessages(importFileParser);
 
     importServiceBucket.grantReadWrite(importProductsFile);
@@ -80,6 +95,12 @@ export class ImportServiceStackKate extends cdk.Stack {
 
     const importPath = api.root.addResource("import");
 
+    const authorizer = new RequestAuthorizer(this, "AuthorizerKate", {
+      handler: basicAuthorizer,
+      identitySources: [IdentitySource.header("Authorization")],
+      resultsCacheTtl: cdk.Duration.seconds(0),
+    });
+
     importPath.addMethod("GET", new LambdaIntegration(importProductsFile), {
       requestParameters: {
         "method.request.querystring.name": true,
@@ -87,6 +108,8 @@ export class ImportServiceStackKate extends cdk.Stack {
       requestValidatorOptions: {
         validateRequestParameters: true,
       },
+      authorizer: authorizer,
+      authorizationType: AuthorizationType.CUSTOM,
     });
   }
 }
