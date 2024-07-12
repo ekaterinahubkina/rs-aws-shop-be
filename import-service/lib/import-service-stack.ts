@@ -5,6 +5,7 @@ import {
   IdentitySource,
   LambdaIntegration,
   RequestAuthorizer,
+  ResponseType,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
 import {
@@ -90,6 +91,13 @@ export class ImportServiceStackKate extends cdk.Stack {
       defaultCorsPreflightOptions: {
         allowOrigins: Cors.ALL_ORIGINS,
         allowMethods: Cors.ALL_METHODS,
+      },
+    });
+
+    api.addGatewayResponse("ImportServiceDefault4xx", {
+      type: ResponseType.DEFAULT_4XX,
+      responseHeaders: {
+        "Access-Control-Allow-Origin": "'*'",
       },
     });
 
