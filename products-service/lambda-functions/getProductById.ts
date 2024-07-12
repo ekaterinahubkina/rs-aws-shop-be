@@ -1,6 +1,7 @@
 import { APIGatewayEvent } from "aws-lambda";
 import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 import { DynamoDB } from "@aws-sdk/client-dynamodb";
+import { createResponse } from "./utils/create-response";
 
 const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE || "";
 const STOCKS_TABLE = process.env.STOCKS_TABLE || "";
@@ -11,16 +12,12 @@ export async function handler(event: Partial<APIGatewayEvent>) {
   console.log("Get product by id handler incoming request", event);
 
   const productId = event.pathParameters?.id;
+
   if (!productId) {
-    return {
+    return createResponse({
       statusCode: 400,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET",
-      },
-      body: JSON.stringify({ message: "Product id is missing." }),
-    };
+      body: { message: "Product id is missing" },
+    });
   }
 
   try {
@@ -36,35 +33,20 @@ export async function handler(event: Partial<APIGatewayEvent>) {
 
     if (product && stock) {
       const joinedProduct = { ...product, count: stock.count };
-      return {
+      return createResponse({
         statusCode: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET",
-        },
-        body: JSON.stringify(joinedProduct),
-      };
+        body: joinedProduct,
+      });
     } else {
-      return {
+      return createResponse({
         statusCode: 404,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET",
-        },
-        body: JSON.stringify({ message: "Product not found" }),
-      };
+        body: { message: "Product not found" },
+      });
     }
   } catch (error) {
-    return {
+    return createResponse({
       statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET",
-      },
-      body: JSON.stringify(error),
-    };
+      body: error,
+    });
   }
 }

@@ -5,10 +5,13 @@ import {
   CopyObjectCommand,
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
+import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import * as csv from "csv-parser";
 import * as stream from "stream";
 
 const client = new S3Client();
+const sqsClient = new SQSClient({});
+const SQS_URL = process.env.SQS_URL ?? "";
 
 export async function handler(event: S3Event) {
   console.log("Import products file handler incoming request", event);
@@ -41,10 +44,15 @@ export async function handler(event: S3Event) {
 
     if (res.Body instanceof stream.Readable) {
       res.Body.pipe(csv())
-        .on("data", (data: { [key: string]: string }) => parsed.push(data))
-        .on("end", () => {
-          console.log("Parsed CSV:", parsed);
-        });
+        .on("data", async (data: { [key: string]: string }) => {
+          parsed.push(data);
+          const command = new SendMessageCommand({
+            QueueUrl: SQS_URL,
+            MessageBody: JSON.stringify(data),
+          });
+          await sqsClient.send(command);
+        })
+        .on("end", () => {});
     } else {
       throw new Error("Not a readable stream");
     }
@@ -54,7 +62,7 @@ export async function handler(event: S3Event) {
     await client.send(deleteCommand);
 
     console.log(
-      'Succesfully parsed the csv and moved the file from "uploaded" to "parsed" folder'
+      'Succesfully parsed the csv, sent each product to SQS and moved the file from "uploaded" to "parsed" folder'
     );
   } catch (error) {
     console.error("Error", error);

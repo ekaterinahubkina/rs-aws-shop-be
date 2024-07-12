@@ -2,6 +2,7 @@ import { APIGatewayEvent } from "aws-lambda";
 import { products } from "./products";
 import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 import { DynamoDB } from "@aws-sdk/client-dynamodb";
+import { createResponse } from "./utils/create-response";
 
 const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE || "";
 const STOCKS_TABLE = process.env.STOCKS_TABLE || "";
@@ -24,24 +25,14 @@ export async function handler(event: Partial<APIGatewayEvent>) {
       return acc;
     }, []);
 
-    return {
+    return createResponse({
       statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET",
-      },
-      body: JSON.stringify(joinedRes),
-    };
+      body: joinedRes,
+    });
   } catch (error) {
-    return {
+    return createResponse({
       statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET",
-      },
-      body: JSON.stringify(error),
-    };
+      body: error,
+    });
   }
 }
