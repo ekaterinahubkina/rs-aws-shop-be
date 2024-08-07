@@ -1,5 +1,13 @@
 import * as cdk from "aws-cdk-lib";
-import { Cors, LambdaIntegration, RestApi } from "aws-cdk-lib/aws-apigateway";
+import {
+  AuthorizationType,
+  Cors,
+  IdentitySource,
+  LambdaIntegration,
+  RequestAuthorizer,
+  ResponseType,
+  RestApi,
+} from "aws-cdk-lib/aws-apigateway";
 import {
   Function as LambdaFunction,
   Runtime,
@@ -10,7 +18,6 @@ import { Bucket, EventType } from "aws-cdk-lib/aws-s3";
 import { Construct } from "constructs";
 import * as path from "path";
 import { config } from "dotenv";
-import { S3EventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { LambdaDestination } from "aws-cdk-lib/aws-s3-notifications";
 import { Queue } from "aws-cdk-lib/aws-sqs";
 
@@ -22,6 +29,8 @@ export class ImportServiceStackKate extends cdk.Stack {
 
     const BUCKET_NAME = process.env.BUCKET_NAME ?? "";
     const SQS_ARN = process.env.SQS_ARN ?? "";
+    const BASIC_AUTHORIZER_LAMBDA_ARN =
+      process.env.BASIC_AUTHORIZER_LAMBDA_ARN ?? "";
 
     const importServiceBucket = Bucket.fromBucketName(
       this,
@@ -59,6 +68,12 @@ export class ImportServiceStackKate extends cdk.Stack {
       }
     );
 
+    const basicAuthorizer = LambdaFunction.fromFunctionAttributes(
+      this,
+      "BasicAuthorizerHandlerKate",
+      { functionArn: BASIC_AUTHORIZER_LAMBDA_ARN, sameEnvironment: true }
+    );
+
     catalogItemsQueue.grantSendMessages(importFileParser);
 
     importServiceBucket.grantReadWrite(importProductsFile);
@@ -79,7 +94,20 @@ export class ImportServiceStackKate extends cdk.Stack {
       },
     });
 
+    api.addGatewayResponse("ImportServiceDefault4xx", {
+      type: ResponseType.DEFAULT_4XX,
+      responseHeaders: {
+        "Access-Control-Allow-Origin": "'*'",
+      },
+    });
+
     const importPath = api.root.addResource("import");
+
+    const authorizer = new RequestAuthorizer(this, "AuthorizerKate", {
+      handler: basicAuthorizer,
+      identitySources: [IdentitySource.header("Authorization")],
+      resultsCacheTtl: cdk.Duration.seconds(0),
+    });
 
     importPath.addMethod("GET", new LambdaIntegration(importProductsFile), {
       requestParameters: {
@@ -88,6 +116,8 @@ export class ImportServiceStackKate extends cdk.Stack {
       requestValidatorOptions: {
         validateRequestParameters: true,
       },
+      authorizer: authorizer,
+      authorizationType: AuthorizationType.CUSTOM,
     });
   }
 }
