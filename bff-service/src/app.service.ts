@@ -6,6 +6,7 @@ import { catchError, firstValueFrom } from 'rxjs';
 import { Service } from './constants/services';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { IncomingHttpHeaders } from 'http';
 
 @Injectable()
 export class AppService {
@@ -25,7 +26,7 @@ export class AppService {
     service: Service;
     url: string;
     method: string;
-    headers: any;
+    headers: IncomingHttpHeaders;
     body: any;
     query: string;
   }) {
@@ -38,14 +39,16 @@ export class AppService {
 
     console.log('ServiceUrl:', serviceUrl);
 
+    const authToken = headers?.authorization;
+
     const config: AxiosRequestConfig = {
       url: serviceUrl,
       method,
       params: query,
-      headers,
-      ...(body && Object.keys(body).length > 0
-        ? { data: JSON.stringify(body) }
+      ...(headers && authToken
+        ? { headers: { Authorization: authToken } }
         : {}),
+      ...(body && Object.keys(body).length > 0 ? { data: body } : {}),
     };
 
     const { status, data } = await firstValueFrom(
