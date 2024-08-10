@@ -38,12 +38,16 @@ export class AppController {
     const cachedProducts: { status: HttpStatus; data: any } | undefined =
       await this.cacheManager.get('products');
 
-    if (service === Service.PRODUCTS_SERVICE && cachedProducts) {
+    const { url, method, headers } = req;
+
+    if (
+      service === Service.PRODUCTS_SERVICE &&
+      method === 'GET' &&
+      cachedProducts
+    ) {
       console.log('RETURNING PRODUCTS FROM CACHE', cachedProducts);
       return res.status(cachedProducts.status).send(cachedProducts.data);
     }
-
-    const { url, method, headers } = req;
 
     delete headers.host;
     delete headers.referer;
