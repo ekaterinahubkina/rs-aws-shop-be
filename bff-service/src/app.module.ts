@@ -8,6 +8,7 @@ import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -15,9 +16,10 @@ import { AppService } from './app.service';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    // CacheModule.register({
-    //   ttl: 120000,
-    // }),
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 120000,
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],
